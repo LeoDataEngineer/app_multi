@@ -3,6 +3,10 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import os
 import PyPDF2
+from PIL import Image
+from rembg import remove
+import io
+
 
 
 page_title = "Club de padel"
@@ -15,7 +19,7 @@ st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
 st.title("Multi Funciones/programas")
 st.text("Calle Garcia....")
 
-selected = option_menu(menu_title=None, options=["Bajar videos", "Unir PDFs", "Detalles"], icons=["youtube", "file-pdf", "clipboard-data"], orientation="horizontal")
+selected = option_menu(menu_title=None, options=["Bajar videos", "Unir PDFs", "Remover fondo"], icons=["youtube", "file-pdf", "image"], orientation="horizontal")
 
 
 # if selected=="Detalles":
@@ -60,8 +64,9 @@ selected = option_menu(menu_title=None, options=["Bajar videos", "Unir PDFs", "D
 #     st.write("#")
 #     st.image("assets/pista1.jpg", caption="Esta es una de nuestras pistas", width=700)    
 #     st.image("assets/pista2.jpg", caption="Esta es una de nuestras pistas", width=700)
-#     st.image("assets/pista3.jpg", caption="Esta es una de nuestras pistas", width=700) 
-
+#     st.image("assets/pista3.jpg", caption="Esta es una de nuestras pistas", width=700)
+ 
+######################################################################################
 if selected == "Bajar videos":
     st.subheader("Baje videos de YouTube")
      
@@ -120,10 +125,41 @@ if selected== "Unir PDFs":
          
          st.download_button(label="Descarga de PDF final", data=pdf_data, file_name="pdf_final.pdf")
                
+#########################################################################################################
 
-
-
-
+if selected == "Remover fondo":
+   #-----funciones------
+   def process_image(image_uploaded):
+      image = Image.open(image_uploaded)
+      processed_imagen = remove_background(image)
+      return processed_imagen
+   
+   def remove_background(image):
+      image_byte = io.BytesIO()
+      image.save(image_byte, format="PNG")
+      image_byte.seek(0)
+      processed_image_bytes = remove(image_byte.read())
+      return Image.open(io.BytesIO(processed_image_bytes))
+   
+   st.subheader("Upload an Image")
+   uploaded_image = st.file_uploader("Choose an image", type=["jpg","jpeg", "png"] )
+   
+   if uploaded_image is not None:
+      
+      st.image(uploaded_image, caption="Imagen subida", use_column_width=True)
+      remove_button = st.button(label="Quitar fondo")
+      
+      if remove_button:
+         processed_image = process_image(uploaded_image)
+         st.image(processed_image, caption="Background Removed", use_column_width=True)
+         
+         processed_image.save("processed_image.png")
+         with open("processed_image.png", "rb" ) as f:
+            image_data = f.read()
+         
+         st.download_button("Donwload Processed Image", data=image_data, file_name="processed_image.png" )
+         os.remove("processed_image.png")   
+         
 # if selected=="Reserva":
 #     st.subheader("Reservar")  
 #     c1,c2 = st.columns(2)  
