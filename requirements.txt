@@ -1,5 +1,0 @@
-streamlit
-pytube
-streamlit_option_menu
-PyPDF2
-rembg
