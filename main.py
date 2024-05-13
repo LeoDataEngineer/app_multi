@@ -71,23 +71,21 @@ if selected == "Bajar videos":
     st.subheader("Baje videos de YouTube")
      
     url = st.text_input("Ingrese la URL del video*")
-    bajar = st.button("Donwload")
+    bajar = st.button("Descargar")
     
     # Backend
     if bajar:
-        if url == "":
-            
-           st.warning("URL es obligatorio")         
-        
+        if not url:
+            st.warning("La URL es obligatoria")
         else:
-           #descargar el video 
-            carpeta_descargas = os.path.join(os.path.expanduser('~'), 'Downloads')
-            yt = YouTube(url)
-            video = yt.streams.get_highest_resolution()
-            
-            video.download(carpeta_descargas)
-            st.success("Descarga exitosa!") 
-            
+            try:
+                yt = YouTube(url)
+                video = yt.streams.get_highest_resolution()
+                carpeta_descargas = os.path.join(os.path.expanduser('~'), 'Downloads')
+                video.download(carpeta_descargas)
+                st.success("¡Descarga exitosa!")
+            except Exception as e:
+                st.error(f"Ocurrió un error durante la descarga: {str(e)}")
            
 
 
