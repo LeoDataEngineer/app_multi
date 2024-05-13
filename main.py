@@ -6,6 +6,9 @@ import PyPDF2
 from PIL import Image
 from rembg import remove
 import io
+from os import listdir
+from os.path import isfile, join
+import uuid
 
 
 
@@ -21,72 +24,65 @@ st.text("Calle Garcia....")
 
 selected = option_menu(menu_title=None, options=["Bajar videos", "Unir PDFs", "Remover fondo"], icons=["youtube", "file-pdf", "image"], orientation="horizontal")
 
-
-# if selected=="Detalles":
-    
-#     st.subheader("Ubicacion")
-#     st.markdown("""<iframe src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d6290.590308358365!2d-57.5599504!3d-37.9702407!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9584dbd62ce65ceb%3A0x703f9cf5823d2926!2sOnce%20Unidos!5e0!3m2!1ses-419!2sar!4v1715439330925!5m2!1ses-419!2sar" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>""", unsafe_allow_html=True)
-   
-    
-#     st.subheader("Horarios")
-#     dia, hora =st.columns(2)
-    
-    
-#     dia.text("Lunes")
-#     hora.text("10:00 - 19:00")
-    
-#     dia.text("Martes")
-#     hora.text("10:00 - 19:00")
-    
-#     dia.text("Miercoles")
-#     hora.text("10:00 - 19:00")
-    
-#     dia.text("Jueves")
-#     hora.text("10:00 - 19:00")
-    
-#     dia.text("Viernes")
-#     hora.text("10:00 - 19:00")
-    
-#     dia.text("Sabado")
-#     hora.text("10:00 - 19:00")
-    
-#     dia.text("Domingo")
-#     hora.text("10:00 - 14:00")
-    
-#     st.subheader("Contacto")
-#     st.text("📞011-0025366565")
-    
-#     st.subheader("Instagram")
-#     st.markdown("Siganos [Aqui]() en instagram")
-    
-   
-# if selected=="Pistas":
-#     st.write("#")
-#     st.image("assets/pista1.jpg", caption="Esta es una de nuestras pistas", width=700)    
-#     st.image("assets/pista2.jpg", caption="Esta es una de nuestras pistas", width=700)
-#     st.image("assets/pista3.jpg", caption="Esta es una de nuestras pistas", width=700)
  
 ######################################################################################
 if selected == "Bajar videos":
-    st.subheader("Baje videos de YouTube")
-     
-    url = st.text_input("Ingrese la URL del video*")
-    bajar = st.button("Descargar")
-    
-    # Backend
-    if bajar:
-        if not url:
-            st.warning("La URL es obligatoria")
-        else:
-            try:
-                yt = YouTube(url)
-                video = yt.streams.get_highest_resolution()
-                carpeta_descargas = os.path.join(os.path.expanduser('~'), 'Downloads')
-                video.download(carpeta_descargas)
-                st.success("¡Descarga exitosa!")
-            except Exception as e:
-                st.error(f"Ocurrió un error durante la descarga: {str(e)}")
-           
+   
+   class Staging:
+
+      def __init__(self,prefix):
+         self.uniquename = uuid.uuid1()
+         self.staging_path = '/data/{}/{}'.format(prefix.replace(' ','_') , self.uniquename  )
+
+      def run(self):
+         self.free()
+         cmd = "mkdir -p {staging_path}".format(staging_path=self.staging_path)
+         output = os.popen(cmd).read()
+         return self.staging_path
+
+      def free(self):
+         cmd = "rm -Rf {staging_path} ".format(staging_path=self.staging_path)
+         output = os.popen(cmd).read()
+   
+   class VideoDownloader:
+
+      def __init__(self,youtube_url,start_second):
+         self.youtube_url = youtube_url
+         self.start_second = start_second
+
+      def run(self,staging_path):
+         
+         d = YouTube(self.youtube_url).streams.get_highest_resolution()
+         d.download(staging_path)
+
+         onlyfiles = [f for f in listdir(staging_path) if isfile(join(staging_path, f))]
+         filename = onlyfiles[0]
+         filepath =  f"{staging_path}/{filename}"
+
+         with open( filepath, "rb") as file:
+               file_bytes = file.read()
+               return file_bytes,filepath,filename
+   
+   def download_video(youtube_url,start_second):
+
+      staging = Staging("tmp")
+      staging_path = staging.run()
+
+      file_bytes,filepath,filename = VideoDownloader(youtube_url,start_second).run(staging_path)
+      st.session_state['video_downloaded'] = True
+      st.session_state['video_filename'] = filename
+      st.session_state['video_filepath'] = filepath
+      st.session_state['video_bytes'] = file_bytes
+
+      staging.free()
+      
+   st.title("Video Downloader")
+
+youtube_url = st.text_input("Youtube URL:",placeholder="Enter here...")
+st.button("Get Video", on_click=download_video,args=(youtube_url,0))
+
+if 'video_downloaded' in st.session_state:
+    st.download_button(label="Video Download",data=st.session_state['video_bytes'],file_name=st.session_state['video_filename'],mime='application/octet-stream')
 
 
 ##############################################################################################
