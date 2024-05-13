@@ -2,6 +2,8 @@ from pytube import YouTube
 import streamlit as st
 from streamlit_option_menu import option_menu
 import os
+import PyPDF2
+
 
 page_title = "Club de padel"
 page_icon= "💻"
@@ -13,7 +15,7 @@ st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
 st.title("Multi Funciones/programas")
 st.text("Calle Garcia....")
 
-selected = option_menu(menu_title=None, options=["Bajar videos", "Pistas", "Detalles"], icons=["youtube", "building", "clipboard-data"], orientation="horizontal")
+selected = option_menu(menu_title=None, options=["Bajar videos", "Unir PDFs", "Detalles"], icons=["youtube", "file-pdf", "clipboard-data"], orientation="horizontal")
 
 
 # if selected=="Detalles":
@@ -77,8 +79,50 @@ if selected == "Bajar videos":
             carpeta_descargas = os.path.join(os.path.expanduser('~'), 'Downloads')
             yt = YouTube(url)
             video = yt.streams.get_highest_resolution()
+            
             video.download(carpeta_descargas)
             st.success("Descarga exitosa!") 
+            
+           
+
+
+##############################################################################################
+
+if selected== "Unir PDFs":
+   
+   # Funciones
+   def unir_pdfs(output_pdf, documents):
+      pdf_final = PyPDF2.PdfMerger()
+      
+      for document in documents:
+         pdf_final.append(document) 
+      
+      with open(output_pdf, 'wb') as file:  # Abre el archivo en modo de escritura de bytes
+         pdf_final.write(file) 
+   
+   
+   
+   # Configuración de la interfaz de Streamlit
+   st.subheader("Adjuntar PDFs para unir")
+   pdf_adjuntos = st.file_uploader(label="", accept_multiple_files=True)
+   unir = st.button(label="Unir PDFs")
+
+   if unir:
+      if len(pdf_adjuntos) <= 1:
+         st.warning("Debe adjuntar más de un PDF")
+      else:
+         output_pdf = "pdf_final.pdf"  # Nombre del archivo de salida
+         unir_pdfs(output_pdf, pdf_adjuntos)
+         st.success("Desde aquí puedes descargar el archivo")
+         
+         with open(output_pdf, 'rb') as file:
+               pdf_data = file.read()
+         
+         st.download_button(label="Descarga de PDF final", data=pdf_data, file_name="pdf_final.pdf")
+               
+
+
+
 
 # if selected=="Reserva":
 #     st.subheader("Reservar")  
